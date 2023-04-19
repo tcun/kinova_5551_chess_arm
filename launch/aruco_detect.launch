@@ -1,0 +1,13 @@
+<launch>
+  <!-- Launch RealSense camera -->
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch" />
+
+  <!-- Launch ArUco detection node -->
+  <node name="aruco_detect" pkg="aruco_detect" type="aruco_detect" output="screen">
+    <remap from="image" to="/camera/color/image_raw" />
+    <param name="dictionary" value="DICT_6X6_250"/>
+  </node>
+
+  <!-- Launch custom capture and process image node -->
+  <node name="capture_and_process_image_node" pkg="kinova_5551_chess_arm" type="capture_and_process_image.py" />
+</launch>

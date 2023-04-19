@@ -1,0 +1,15 @@
+<launch>
+  <!-- Launch the Kinova Gen3 Lite driver -->
+  <include file="$(find kortex_driver)/launch/kortex_driver.launch">
+    <arg name="robot_name" value="gen3_lite" />
+  </include>
+
+  <include file="$(find kortex_gazebo)/launch/spawn_kortex_robot.launch" />
+  <include file="$(find kinova_vision/launch/kinova_vision.launch" />
+
+  <!-- Set the path to your demo script -->
+  <arg name="demo_script_path" default="$(find kinova_5551_chess_arm)/scripts/gen3_lite_kortex_move_demo.py" />
+
+  <!-- Launch your demo script -->
+  <node name="gen3_lite_kortex_move_demo" pkg="kinova_5551_chess_arm" type="gen3_lite_kortex_move_demo.py" args="$(arg demo_script_path)" output="screen" />
+</launch>

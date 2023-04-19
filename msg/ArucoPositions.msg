@@ -1,0 +1,1 @@
+ArucoPosition[] aruco_positions
