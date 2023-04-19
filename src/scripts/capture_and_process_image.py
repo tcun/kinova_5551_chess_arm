@@ -6,6 +6,8 @@ from sensor_msgs.msg import Image
 from std_srvs.srv import Trigger, TriggerResponse
 from fiducial_msgs.msg import FiducialTransformArray
 from Kino.kinova_5551_chess_arm.msg import ArucoPositions, ArucoPosition
+from kinova_5551_chess_arm.srv import CaptureAndProcessImage, CaptureAndProcessImageResponse
+
 
 class CaptureAndProcessImage:
 
@@ -37,8 +39,13 @@ class CaptureAndProcessImage:
         rospy.loginfo('ArUco positions: {}'.format(aruco_positions))
 
         return TriggerResponse(success=True, message='Image captured and ArUco positions retrieved successfully')
+    
+    def handle_capture_and_process_image(req):
+        capture_and_process_image()
+        return CaptureAndProcessImageResponse()
 
 if __name__ == '__main__':
     rospy.init_node('capture_and_process_image_node')
     capture_and_process_image_node = CaptureAndProcessImage()
+    capture_and_process_image_service = rospy.Service('capture_and_process_image', CaptureAndProcessImage, handle_capture_and_process_image)
     rospy.spin()

@@ -5,6 +5,8 @@ from ChessEnvironment import ChessPiece
 from KinovaEngine import PickAndPlace
 from Kino.kinova_5551_chess_arm.msg import ArucoPositions, ArucoPosition
 from kinova_5551_chess_arm.srv import GetMove, GetMoveResponse
+from kinova_5551_chess_arm.srv import CaptureAndProcessImage
+from kinova_5551_chess_arm.srv import CaptureAndProcessImageRequest
 
 
 class KinovaChessControl(object):
@@ -34,6 +36,8 @@ class KinovaChessControl(object):
             'aruco_positions', ArucoPositions, self.aruco_positions_callback)
         self.get_move_service = rospy.Service(
             'get_move', GetMove, self.handle_get_move)
+        capture_and_process_image_client = rospy.ServiceProxy(
+            'capture_and_process_image', CaptureAndProcessImage)
 
     # def get_move_from_user(self):
     #     first_move = True
@@ -166,7 +170,7 @@ class KinovaChessControl(object):
 
         return kill_move
 
-    def move_gripper(self, pose):
+    def move_gripper(self, pose, attempts):
 
         tolerance = 0.01
         for i in range(attempts):
@@ -318,7 +322,7 @@ class KinovaChessControl(object):
 
         self.aruco_positions = msg.aruco_positions
         self.chess_board.reset_board()
-        self.populate_board_position_map()
+
         self.chess_board.populate_board(self.aruco_positions)
 
     def initial_calibration(self):
@@ -327,20 +331,35 @@ class KinovaChessControl(object):
             rospy.sleep(1)
 
         self.chess_board.calculate_global_orientation(self.aruco_positions)
-        # TODO Add Function to calculate cartesian position of each board square
+        self.populate_board_position_map()
         self.chess_board.populate_board(self.aruco_positions)
 
 
 if __name__ == "__main__":
     rospy.init_node('kinova_chess_control_node')
     kinova_chess_control = KinovaChessControl()
-    # capture_and_process_image.py should be intially called in launch file in correct spot
-    kinova_chess_control.initial_calibration()
+
+    # Wait for 'get_move' and 'capture_and_process_image' services to become available
+    rospy.loginfo("Waiting for 'get_move' service...")
+    rospy.wait_for_service('get_move')
+    rospy.loginfo("'get_move' service is available.")
+
+    rospy.loginfo("Waiting for 'capture_and_process_image' service...")
+    rospy.wait_for_service('capture_and_process_image')
+    rospy.loginfo("'capture_and_process_image' service is available.")
 
     get_move_client = rospy.ServiceProxy('get_move', GetMove)
+    capture_and_process_image_client = rospy.ServiceProxy(
+        'capture_and_process_image', CaptureAndProcessImage)
+
+    # TODO capture_and_process_image.py should initially call capture_and_process_image() in launch file in correct spot
+    kinova_chess_control.initial_calibration()
 
     while not rospy.is_shutdown():
         try:
+            # Take and Process image and update aruco_positions
+            req = CaptureAndProcessImageRequest()
+            capture_and_process_image_client(req)
             input_prompt = "Input piece current position and desired position \n(e.g., c2c3 to move piece on c2 to c3) or type 'exit' to quit: "
             move_resp = get_move_client(input_prompt)
             if move_resp.current_pos == "" and move_resp.final_pos == "":

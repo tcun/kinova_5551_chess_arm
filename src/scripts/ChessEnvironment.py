@@ -12,7 +12,10 @@ class ChessBoard:
         self.graveyard_coordinates = [0, 0, 0]
 
     def calculate_global_orientation(self, aruco_positions):
-        aruco_ids = [101, 102, 103, 104]
+        # Aruco 101 will be on the bottom left corner of the board just outside of a1.
+        # Aruco 102 will be on the top left corner of the board outside of a8.
+        # Option to add additional tags for more precision. 
+        aruco_ids = [101, 102]
         marker_positions = {aruco_id: None for aruco_id in aruco_ids}
 
         for position in aruco_positions:
@@ -22,9 +25,9 @@ class ChessBoard:
 
         # Calculation for center of board
         normal_101_102 = marker_positions[102] - marker_positions[101]
-        normal_103_104 = marker_positions[104] - marker_positions[103]
-        normal_101_103 = marker_positions[103] - marker_positions[101]
-        normal_102_104 = marker_positions[104] - marker_positions[102]
+
+        math.atan2
+
 
         center_1 = (normal_101_102 + normal_103_104) / 2
         center_2 = (normal_101_103 + normal_102_104) / 2
