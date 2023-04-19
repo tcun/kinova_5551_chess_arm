@@ -6,9 +6,9 @@ from KinovaEngine import PickAndPlace
 from Kino.kinova_5551_chess_arm.msg import ArucoPositions, ArucoPosition
 from kinova_5551_chess_arm.srv import GetMove, GetMoveResponse
 
+
 class KinovaChessControl(object):
     def __init__(self):
-        
 
         # Initialize PickAndPlace, ChessBoard, and ChessPiece instances
 
@@ -27,12 +27,13 @@ class KinovaChessControl(object):
 
         self.gripper_setting = {"open": 0.6, "grab": 0.3, "close": 0}
         self.height_setting = {"over": 0.15, "pick": 0.035}
-        
+
         self.aruco_positions_received = False
         self.aruco_positions = None
-        self.aruco_positions_sub = rospy.Subscriber('aruco_positions', ArucoPositions, self.aruco_positions_callback)
-        self.get_move_service = rospy.Service('get_move', GetMove, self.handle_get_move)
-
+        self.aruco_positions_sub = rospy.Subscriber(
+            'aruco_positions', ArucoPositions, self.aruco_positions_callback)
+        self.get_move_service = rospy.Service(
+            'get_move', GetMove, self.handle_get_move)
 
     # def get_move_from_user(self):
     #     first_move = True
@@ -51,7 +52,7 @@ class KinovaChessControl(object):
     #             first_move = False
 
     #     return current_pos, final_pos
-    
+
     def handle_get_move(self, req):
         try:
             move = input(req.input_prompt)
@@ -65,13 +66,14 @@ class KinovaChessControl(object):
         col = ord(notation[0]) - ord('a')
         row = int(notation[1]) - 1
         return row, col
-    
+
     def process_move(self, move_string):
         # Function to take in movement string, sanitize the input, and check the move type.
         move_pattern = re.compile(r'^([a-h][1-8]){2}$')
 
         if not move_pattern.match(move_string):
-            raise ValueError("Move Invalid: Input must be in the format [a-h][1-8][a-h][1-8] (e.g., a2a4)")
+            raise ValueError(
+                "Move Invalid: Input must be in the format [a-h][1-8][a-h][1-8] (e.g., a2a4)")
 
         current_pos = self.notation_to_index(move_string[:2])
         final_pos = self.notation_to_index(move_string[2:])
@@ -197,10 +199,14 @@ class KinovaChessControl(object):
         # Reach the named position
         self.engine.reach_named_position()
 
-
     def move_piece(self, current_pos, final_pos):
         # get piece number at given board initial position
         piece = self.board.get_square_status(position=current_pos)
+
+        if piece is None:
+            raise ValueError(
+                "Invalid Piece: No Piece at board position")
+
         # pickup the piece
         self.pick_piece(piece)
         # move the piece to the given final position
@@ -209,16 +215,20 @@ class KinovaChessControl(object):
     def remove_piece(self, position):
         # get piece number at given board position
         piece = self.board.get_square_status(position=position)
+
+        if piece is None:
+            raise ValueError(
+                "Invalid Piece: No Piece at board position")
         # pickup the piece
         self.pick_piece(piece)
         # throw the piece in the graveyard
         self.trash_piece()
 
-    def pick_piece(self, piece_number):
+    def pick_piece(self, piece):
         success = True
 
         # Get Piece Coordinate
-        x, y = self.piece.get_world_coord(piece_number)
+        x, y = piece.get_world_coord()
 
         # set pose msg to above piece
         piece_location = self.engine.set_pose_msg(pos_x=x,
@@ -252,11 +262,11 @@ class KinovaChessControl(object):
             print("picked up piece successfully!")
         return success
 
-    def place_piece(self, position):
+    def place_piece(self, board_position):
         success = True
 
         # get position coordinate
-        x, y = self.board.get_square_coordinates(position=position)
+        x, y = self.board.get_square_coordinates(board_position=board_position)
 
         # set pose msg to above target location
         # We assume here we just picked up a piece and are at movement height
@@ -305,9 +315,10 @@ class KinovaChessControl(object):
     def aruco_positions_callback(self, msg):
         if not self.aruco_positions_received:
             self.aruco_positions_received = True
-            
+
         self.aruco_positions = msg.aruco_positions
         self.chess_board.reset_board()
+        self.populate_board_position_map()
         self.chess_board.populate_board(self.aruco_positions)
 
     def initial_calibration(self):
@@ -316,13 +327,14 @@ class KinovaChessControl(object):
             rospy.sleep(1)
 
         self.chess_board.calculate_global_orientation(self.aruco_positions)
+        # TODO Add Function to calculate cartesian position of each board square
         self.chess_board.populate_board(self.aruco_positions)
-    
 
 
 if __name__ == "__main__":
     rospy.init_node('kinova_chess_control_node')
     kinova_chess_control = KinovaChessControl()
+    # capture_and_process_image.py should be intially called in launch file in correct spot
     kinova_chess_control.initial_calibration()
 
     get_move_client = rospy.ServiceProxy('get_move', GetMove)
@@ -341,7 +353,6 @@ if __name__ == "__main__":
             print(f"Service call failed: {e}")
         except KeyboardInterrupt:
             break
-
 
     # Sanitize input
         # success = true
