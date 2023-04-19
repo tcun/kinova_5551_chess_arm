@@ -19,7 +19,7 @@ class KinovaChessControl(object):
         # !!!
         self.engine = PickAndPlace()
         self.board = ChessBoard()
-        self.piece = ChessPiece()
+        # self.piece = ChessPiece()
 
         # Set gripper orientation, gripper settings, and height settings
         self.gripper_ori = {"ori_x": 0.7119706821454233,
@@ -36,8 +36,6 @@ class KinovaChessControl(object):
             'aruco_positions', ArucoPositions, self.aruco_positions_callback)
         self.get_move_service = rospy.Service(
             'get_move', GetMove, self.handle_get_move)
-        capture_and_process_image_client = rospy.ServiceProxy(
-            'capture_and_process_image', CaptureAndProcessImage)
 
     # def get_move_from_user(self):
     #     first_move = True
@@ -60,11 +58,11 @@ class KinovaChessControl(object):
     def handle_get_move(self, req):
         try:
             move = input(req.input_prompt)
-            current_pos, final_pos = self.process_move(move)
-            return GetMoveResponse(current_pos=current_pos, final_pos=final_pos)
+            p_move = self.process_move(move)
+            return GetMoveResponse(current_pos=p_move["current_pos"], final_pos=p_move["final_pos"], kill_move=p_move["kill_move"])
         except ValueError as e:
             print(f"Invalid move: {e}")
-            return GetMoveResponse(current_pos="", final_pos="")
+            return GetMoveResponse(current_pos="", final_pos="", kill_move="")
 
     def notation_to_index(self, notation):
         col = ord(notation[0]) - ord('a')
@@ -183,19 +181,7 @@ class KinovaChessControl(object):
             "The gripper failed to plan even after {} times of trying.".format(attempts))
         return False
 
-    def execute_move(self, move_string):
-        # Call process_move and get the result
-        move_result = self.process_move(move_string)
-
-        # If move is invalid, return an error
-        if move_result is None:
-            return "Invalid move"
-
-        # Otherwise, execute the move
-        current_pos = move_result["current_pos"]
-        final_pos = move_result["final_pos"]
-        kill_move = move_result["kill_move"]
-
+    def execute_move(self, current_pos, final_pos, kill_move):
         if kill_move:
             self.remove_piece(final_pos)
         self.move_piece(current_pos, final_pos)
@@ -352,12 +338,12 @@ if __name__ == "__main__":
     capture_and_process_image_client = rospy.ServiceProxy(
         'capture_and_process_image', CaptureAndProcessImage)
 
-    # TODO capture_and_process_image.py should initially call capture_and_process_image() in launch file in correct spot
     kinova_chess_control.initial_calibration()
 
     while not rospy.is_shutdown():
         try:
             # Take and Process image and update aruco_positions
+            # TODO Move and wait till arm is in position for photo
             req = CaptureAndProcessImageRequest()
             capture_and_process_image_client(req)
             input_prompt = "Input piece current position and desired position \n(e.g., c2c3 to move piece on c2 to c3) or type 'exit' to quit: "
@@ -365,7 +351,7 @@ if __name__ == "__main__":
             if move_resp.current_pos == "" and move_resp.final_pos == "":
                 continue
             kinova_chess_control.execute_chess_move(
-                current_pos=move_resp.current_pos, final_pos=move_resp.final_pos)
+                current_pos=move_resp.current_pos, final_pos=move_resp.final_pos, kill_move=move_resp.kill_move)
         except ValueError as e:
             print(e)
         except rospy.ServiceException as e:

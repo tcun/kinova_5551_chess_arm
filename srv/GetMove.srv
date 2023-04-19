@@ -3,3 +3,4 @@ string input_prompt
 ---
 string current_pos
 string final_pos
+bool kill_move

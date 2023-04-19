@@ -25,24 +25,24 @@ class ChessBoard:
 
         # Calculation for center of board
         normal_101_102 = marker_positions[102] - marker_positions[101]
+        #finding angle between y_world and y_board
+        theta = math.atan2(normal_101_102[0],normal_101_102[1])
 
-        math.atan2
+
+        board_x = marker_positions[101][0]
+        board_y = marker_positions[101][1]
 
 
-        center_1 = (normal_101_102 + normal_103_104) / 2
-        center_2 = (normal_101_103 + normal_102_104) / 2
-        center = (center_1 + center_2) / 2
-
-        self.global_orientation = center
+        self.global_orientation = board_x, board_y, theta
 
     def get_square_coordinates(self, position):
         # x_coordinate = (position[0] * self.global_scale[0]
         #                 ) + self.global_origin[0]
         # y_coordinate = (position[1] * self.global_scale[1]
         #                 ) + self.global_origin[1]
-        theta = math.pi
-        d_x = .2
-        d_y = -.2
+
+        d_x , d_y, theta= self.global_orientation
+       
 
         # square size
         sq_inc = 0.035
