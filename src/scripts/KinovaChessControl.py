@@ -59,8 +59,9 @@ class KinovaChessControl(object):
         current_piece = self.board[current_pos[0], current_pos[1]]
         final_piece = self.board[final_pos[0], final_pos[1]]
 
-        if not current_piece:
-            return None
+        if not current_piece or not final_piece:
+            raise ValueError(
+                "Move Invalid: Invalid pieces")
 
         kill_move = self.validate_move(current_piece, final_pos)
 
