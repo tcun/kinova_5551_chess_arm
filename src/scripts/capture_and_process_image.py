@@ -5,19 +5,19 @@ from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 from std_srvs.srv import Trigger, TriggerResponse
 from fiducial_msgs.msg import FiducialTransformArray
-from Kino.kinova_5551_chess_arm.msg import ArucoPositions, ArucoPosition
+from kinova_5551_chess_arm.msg import ArucoPositions, ArucoPosition
 from kinova_5551_chess_arm.srv import CaptureAndProcessImage, CaptureAndProcessImageResponse
 
 
-class CaptureAndProcessImage:
+class CaptureAndProcessImageNode:
 
     def __init__(self):
+        rospy.init_node('capture_and_process_image_node')
         self.bridge = CvBridge()
         self.image_sub = rospy.Subscriber('/camera/color/image_raw', Image, self.image_callback)
         self.aruco_sub = rospy.Subscriber('/fiducial_transforms', FiducialTransformArray, self.aruco_callback)
-        self.image_capture_service = rospy.Service('capture_and_process_image', Trigger, self.capture_and_process_image)
         self.aruco_positions_pub = rospy.Publisher('aruco_positions', ArucoPositions, queue_size=10)
-    
+        self.capture_and_process_image_service = rospy.Service('capture_and_process_image', CaptureAndProcessImage, self.handle_capture_and_process_image)
 
     def image_callback(self, msg):
         self.latest_image = msg
@@ -40,12 +40,12 @@ class CaptureAndProcessImage:
 
         return TriggerResponse(success=True, message='Image captured and ArUco positions retrieved successfully')
     
-    def handle_capture_and_process_image(req):
-        capture_and_process_image()
-        return CaptureAndProcessImageResponse()
+    def handle_capture_and_process_image(self, request):
+        # Implement your service logic here
+        response = CaptureAndProcessImageResponse()
+        response.success = True
+        return response
 
 if __name__ == '__main__':
-    rospy.init_node('capture_and_process_image_node')
-    capture_and_process_image_node = CaptureAndProcessImage()
-    capture_and_process_image_service = rospy.Service('capture_and_process_image', CaptureAndProcessImage, handle_capture_and_process_image)
+    capture_and_process_image_node = CaptureAndProcessImageNode()
     rospy.spin()

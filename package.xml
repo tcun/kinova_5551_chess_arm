@@ -52,11 +52,13 @@
   <build_depend>kortex_driver</build_depend>
   <build_depend>kortex_gazebo</build_depend>
   <build_depend>kinova_vision</build_depend>
+  <build_depend>kinova_description</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_export_depend>kortex_driver</build_export_depend>
   <build_export_depend>kortex_gazebo</build_export_depend>
   <build_export_depend>kinova_vision</build_export_depend>
+  <build_export_depend>kinova_description</build_export_depend>
   <build_export_depend>rospy</build_export_depend>
   <build_export_depend>std_msgs</build_export_depend>
   <build_depend>message_generation</build_depend>
@@ -64,6 +66,7 @@
   <exec_depend>kortex_driver</exec_depend>
   <exec_depend>kortex_gazebo</exec_depend>
   <exec_depend>kinova_vision</exec_depend>
+  <exec_depend>kinova_description</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
 

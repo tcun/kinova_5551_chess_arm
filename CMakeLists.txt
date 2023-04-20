@@ -12,10 +12,12 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   kortex_driver
   kortex_gazebo
+  kortex_description
   cv_bridge
   realsense2_camera
   aruco_detect
   message_generation
+  
 )
 
 ## System dependencies are found with CMake's conventions
@@ -62,7 +64,7 @@ add_message_files(
 add_service_files(
   FILES
   GetMove.srv
-  CaptureAndProcess.srv
+  CaptureAndProcessImage.srv
 )
 
 ## Generate actions in the 'action' folder

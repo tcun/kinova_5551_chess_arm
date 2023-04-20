@@ -1,12 +1,14 @@
+#!/usr/bin/env python3
+
 import rospy
 import re
 from ChessEnvironment import ChessBoard
 from ChessEnvironment import ChessPiece
 from KinovaEngine import PickAndPlace
-from Kino.kinova_5551_chess_arm.msg import ArucoPositions, ArucoPosition
+from kinova_5551_chess_arm.msg import ArucoPositions, ArucoPosition
 from kinova_5551_chess_arm.srv import GetMove, GetMoveResponse
-from kinova_5551_chess_arm.srv import CaptureAndProcessImage
-from kinova_5551_chess_arm.srv import CaptureAndProcessImageRequest
+from kinova_5551_chess_arm.srv import CaptureAndProcessImage, CaptureAndProcessImageRequest, CaptureAndProcessImageResponse
+
 
 
 class KinovaChessControl(object):
@@ -312,17 +314,22 @@ class KinovaChessControl(object):
         self.chess_board.populate_board(self.aruco_positions)
 
     def initial_calibration(self):
-        while not self.aruco_positions_received:
-            rospy.loginfo("Waiting for ArUco positions...")
-            rospy.sleep(1)
+        try:
+            while not rospy.is_shutdown() and not self.aruco_positions_received:
+                rospy.loginfo("Waiting for ArUco positions...")
+                rospy.sleep(1)
 
-        self.chess_board.calculate_global_orientation(self.aruco_positions)
-        self.populate_board_position_map()
-        self.chess_board.populate_board(self.aruco_positions)
+            if not rospy.is_shutdown():
+                self.chess_board.calculate_global_orientation(self.aruco_positions)
+                self.populate_board_position_map()
+                self.chess_board.populate_board(self.aruco_positions)
+        except rospy.ROSInterruptException:
+            rospy.loginfo("Initial calibration interrupted")
+
 
 
 if __name__ == "__main__":
-    rospy.init_node('kinova_chess_control_node')
+    # rospy.init_node('kinova_chess_control_node')
     kinova_chess_control = KinovaChessControl()
 
     # Wait for 'get_move' and 'capture_and_process_image' services to become available
@@ -344,8 +351,8 @@ if __name__ == "__main__":
         try:
             # Take and Process image and update aruco_positions
             # TODO Move and wait till arm is in position for photo
-            req = CaptureAndProcessImageRequest()
-            capture_and_process_image_client(req)
+            # req = CaptureAndProcessImageRequest()
+            # capture_and_process_image_client(req)
             input_prompt = "Input piece current position and desired position \n(e.g., c2c3 to move piece on c2 to c3) or type 'exit' to quit: "
             move_resp = get_move_client(input_prompt)
             if move_resp.current_pos == "" and move_resp.final_pos == "":

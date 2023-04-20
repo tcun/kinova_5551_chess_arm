@@ -3,12 +3,11 @@ import math
 
 
 class ChessBoard:
-    def __init__(self, corner_tags_coords):
+    def __init__(self):
         self.board = np.zeros((8, 8), dtype=object)
         # TODO Create board map that maps indexes to calculated cartesian coordinates
         self.board_position_map = np.zeros((8, 8), dtype=tuple)
-        self.global_origin, self.global_scale = self.calculate_global_orientation(
-            corner_tags_coords)
+        self.global_origin, self.global_scale = (0, 0);
         self.graveyard_coordinates = [0, 0, 0]
 
     def calculate_global_orientation(self, aruco_positions):
