@@ -1,112 +1,109 @@
 import numpy as np
 import math
 
-
 class ChessBoard:
     def __init__(self):
+        # Initialize empty chess board
         self.board = np.zeros((8, 8), dtype=object)
-        # TODO Create board map that maps indexes to calculated cartesian coordinates
+        
+        # Initialize board position map that maps indexes to calculated cartesian coordinates
         self.board_position_map = np.zeros((8, 8), dtype=tuple)
-        self.global_origin, self.global_scale = (0, 0);
+        
+        # Initialize global origin and scale for board coordinates
+        self.global_origin, self.global_scale = (0, 0)
+        
+        # Initialize coordinates for graveyard for captured pieces
         self.graveyard_coordinates = [0, 0, 0]
 
     def calculate_global_orientation(self, aruco_positions):
-        # Aruco 101 will be on the bottom left corner of the board just outside of a1.
-        # Aruco 102 will be on the top left corner of the board outside of a8.
-        # Option to add additional tags for more precision. 
+        # Calculate global orientation of chess board based on Aruco marker positions
         aruco_ids = [101, 102]
         marker_positions = {aruco_id: None for aruco_id in aruco_ids}
 
         for position in aruco_positions:
             if position.id in aruco_ids:
-                marker_positions[position.id] = np.array(
-                    [position.x, position.y, position.z])
+                marker_positions[position.id] = np.array([position.x, position.y, position.z])
 
         # Calculation for center of board
         normal_101_102 = marker_positions[102] - marker_positions[101]
-        #finding angle between y_world and y_board
-        theta = math.atan2(normal_101_102[0],normal_101_102[1])
+        
+        # Calculate angle between y_world and y_board
+        theta = math.atan2(normal_101_102[0], normal_101_102[1])
 
-
+        # Set origin coordinates for chess board
         board_x = marker_positions[101][0]
         board_y = marker_positions[101][1]
 
-
+        # Set global orientation for chess board
         self.global_orientation = board_x, board_y, theta
 
     def get_square_coordinates(self, position):
-        # x_coordinate = (position[0] * self.global_scale[0]
-        #                 ) + self.global_origin[0]
-        # y_coordinate = (position[1] * self.global_scale[1]
-        #                 ) + self.global_origin[1]
+        # Calculate world coordinates of square based on board position and global orientation
+        d_x, d_y, theta = self.global_orientation
 
-        d_x , d_y, theta= self.global_orientation
-       
-
-        # square size
+        # Set square size
         sq_inc = 0.035
 
-        # board_number_map = {"1": 0.5*sq_inc, "2": 1.5*sq_inc, "3": 2.5*sq_inc,
-        #                     "4": 3.5*sq_inc, "5": 4.5*sq_inc, "6": 5.5*sq_inc,
-        #                     "7": 6.5*sq_inc, "8": 7.5*sq_inc}
-        
-        board_number_map = np.array(
-            [0.5*sq_inc, 1.5*sq_inc, 2.5*sq_inc, 3.5*sq_inc, 4.5*sq_inc, 5.5*sq_inc, 6.5*sq_inc, 7.5*sq_inc])
+        # Create map for board number to position offset
+        board_number_map = np.array([0.5*sq_inc, 1.5*sq_inc, 2.5*sq_inc, 3.5*sq_inc,
+                                     4.5*sq_inc, 5.5*sq_inc, 6.5*sq_inc, 7.5*sq_inc])
 
-        # vector maps letter to x coordinate and number to y coordinate
-        square_vector = np.array([board_number_map[position[0]],
-                                  board_number_map[position[1]],
-                                  0])
+        # Map letter and number positions to position offsets
+        square_vector = np.array([board_number_map[position[0]], board_number_map[position[1]], 0])
 
-        # rotations will always be around the z axis
+        # Apply rotation matrix to calculate world coordinates
         R_wb = np.array([[math.cos(theta), -math.sin(theta), 0],
-                        [math.sin(theta), math.cos(theta), 0],
-                        [0, 0, 1]])
-
+                         [math.sin(theta), math.cos(theta), 0],
+                         [0, 0, 1]])
         world_coord = np.matmul(R_wb, np.transpose(square_vector))
 
+        # Calculate final world coordinates
         x_coordinate = world_coord[0] + d_x
         y_coordinate = world_coord[1] + d_y
 
         return x_coordinate, y_coordinate
-    
+
     def populate_board_position_map(self):
+        # Populate board position map with world coordinates of each square
         for i in range(8):
             for j in range(8):
                 x, y = self.get_square_coordinates([i,j])
                 self.board_position_map[i, j] = (x, y)
 
     def get_square_status(self, position):
+        # Return piece on board at given position, if any
         piece = self.board[position[0], position[1]]
         if piece:
             return piece
         return None
 
     def set_square_status(self, position, piece):
+        # Set piece on board at given position
         self.board[position[0], position[1]] = piece
 
     def get_graveyard_coordinates(self):
-
+        # Return world coordinates of graveyard for captured pieces
         return self.graveyard_coordinates
 
     def set_graveyard_coordinates(self, x, y, z):
+        # Set world coordinates of graveyard for captured pieces
         self.graveyard_coordinates = [x, y, z]
 
     def populate_board(self, aruco_positions):
-        for fiducial_id, x, y, z in aruco_positions:  # ???
+        # Populate chess board with pieces based on Aruco marker positions
+        for fiducial_id, x, y, z in aruco_positions:
             if 201 <= fiducial_id <= 316:
-                team_type, piece_type = self.get_piece_type_and_color(
-                    fiducial_id)
+                team_type, piece_type = self.get_piece_type_and_color(fiducial_id)
                 cartesian_position = (x, y, z)
                 board_position = self.get_board_position(cartesian_position)
-                piece = ChessPiece(
-                    team_type, piece_type, fiducial_id, cartesian_position, board_position)
+                piece = ChessPiece(team_type, piece_type, fiducial_id, cartesian_position, board_position)
                 self.add_piece_to_board(piece)
             else:
-                # Add ROS error log
+                # TODO: Add ROS error log
                 pass
 
     def get_piece_type_and_color(self, fiducial_id):
+        # Map fiducial IDs to piece types and colors
         team_type = None
         piece_type = None
 
@@ -152,6 +149,7 @@ class ChessBoard:
         return team_type, piece_type
 
     def get_board_position(self, cartesian_position):
+        # Determine board position based on cartesian position
         min_distance = float('inf')
         nearest_position = None
 
@@ -167,29 +165,36 @@ class ChessBoard:
         return nearest_position
 
     def add_piece_to_board(self, piece):
+        # Add piece to chess board
         row, col = piece.board_position
         self.board[row, col] = piece
 
     def reset_board(self):
+        # Reset chess board to empty state
         self.board = np.zeros((8, 8), dtype=object)
 
-
 class ChessPiece:
-    def __init__(self, team_type, piece_type, aruco_id, cartesian_position, board_position):
+    def init(self, team_type, piece_type, aruco_id, cartesian_position, board_position):
+        # Initialize ChessPiece with team type, piece type, Aruco ID, cartesian position, and board position
         self.team_type = team_type
         self.piece_type = piece_type
         self.aruco_id = aruco_id
         self.cartesian_position = cartesian_position
         self.board_position = board_position
-
+        
     def is_friendly(self, piece_type):
+        # Check if piece is friendly (i.e. same team)
         return self.piece_type == piece_type
 
     def get_world_coord(self):
-        return self.position
+        # Return cartesian position of piece
+        return self.cartesian_position
 
     def set_world_coord(self, x, y):
-        self.position = [x, y]
+        # Set cartesian position of piece
+        self.cartesian_position = [x, y]
 
     def __str__(self):
-        return f"{self.piece_type} ({self.team_type}) at {self.position}"
+        # Return string representation of ChessPiece
+        return f"{self.piece_type} ({self.team_type}) at {self.cartesian_position}"
+

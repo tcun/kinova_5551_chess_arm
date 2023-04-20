@@ -10,18 +10,10 @@ from kinova_5551_chess_arm.srv import GetMove, GetMoveResponse
 from kinova_5551_chess_arm.srv import CaptureAndProcessImage, CaptureAndProcessImageRequest, CaptureAndProcessImageResponse
 
 
-
 class KinovaChessControl(object):
     def __init__(self):
-
-        # Initialize PickAndPlace, ChessBoard, and ChessPiece instances
-
-        # !!!
-        # TODO Make intailize ChessBoard and ChessPiece attributes using
-        # !!!
         self.engine = PickAndPlace()
         self.board = ChessBoard()
-        # self.piece = ChessPiece()
 
         # Set gripper orientation, gripper settings, and height settings
         self.gripper_ori = {"ori_x": 0.7119706821454233,
@@ -38,24 +30,6 @@ class KinovaChessControl(object):
             'aruco_positions', ArucoPositions, self.aruco_positions_callback)
         self.get_move_service = rospy.Service(
             'get_move', GetMove, self.handle_get_move)
-
-    # def get_move_from_user(self):
-    #     first_move = True
-    #     while True:
-    #         try:
-    #             if first_move:
-    #                 move = input(
-    #                     "Input piece current position and desired position \n(e.g., c2c3 to move piece on c2 to c3) > ")
-    #             else:
-    #                 move = input("Try again > ")
-    #             current_pos, final_pos = self.process_move(move)
-    #             break
-
-    #         except ValueError as e:
-    #             print(e)
-    #             first_move = False
-
-    #     return current_pos, final_pos
 
     def handle_get_move(self, req):
         try:
@@ -88,85 +62,35 @@ class KinovaChessControl(object):
         if not current_piece:
             return None
 
-        # move_validity = self.validate_move(current_piece, final_pos)
-        # if not move_validity["valid"]:
-        #     return None
-
-        kill_move = False
-        if final_piece:
-            if final_piece.team_type == current_piece.team_type:
-                return None
-            kill_move = True
+        kill_move = self.validate_move(current_piece, final_pos)
 
         return {"current_pos": current_pos, "final_pos": final_pos, "kill_move": kill_move}
 
-    # def process_move(self, move_string):
-    #     # Function to take in movement string sanitize the input and check the move type.
-    #     ## Sanitize input before parsing##
-    #     # All of the letters on a board a through h.
-    #     valid_letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-    #     valid_numbers = ['1', '2', '3', '4', '5', '6', '7', '8']
-
-    #     # Verify correct length
-    #     if len(move_string) != 4:
-    #         raise ValueError(
-    #             "Move Invalid: Input must be four characters long(e.g., a2a4)")
-
-    #     # Verify first charector is a lower case letter between a and h
-    #     if ~(move_string[0] in valid_letters):
-    #         raise ValueError(
-    #             "Move Invalid: First character should be a lower case letter a-h (e.g., e2a4)")
-
-    #     # Verify second charector is a digit 1-8
-    #     if ~(move_string[1] in valid_numbers):
-    #         raise ValueError(
-    #             "Move Invalid: Second character should be digit 1-8 (e.g., a2a4)")
-
-    #     # Verify third charector is a lower case letter between a and h
-    #     if ~(move_string[2] in valid_letters):
-    #         raise ValueError(
-    #             "Move Invalid: Third character should be a lower case letter a-h(e.g., a2a4)")
-
-    #     # Verify fourth charector is a digit 1-8
-    #     if ~(move_string[3] in valid_numbers):
-    #         raise ValueError(
-    #             "Move Invalid: Fourth character should be digit 1-8 (e.g., a2a4)")
-
-    #     current_pos = move_string[:2]
-    #     final_pos = move_string[2:]
-
-    #     kill_move = self.validate_move_type(
-    #         current_pos=current_pos, final_pos=final_pos)
-
-    #     return current_pos, final_pos, kill_move
-
     def validate_move_type(self, current_pos, final_pos):
-        # Given current and final positions validate the move and return if it is a kill
+        # Given current and final positions, validate the move and return if it is a kill
+
         # Verify current and final positions are not the same
         if current_pos == final_pos:
             raise ValueError(
-                "Move Invalid: First and second positions are the same")
+                "Move Invalid: Current and final positions are the same")
 
         move_piece = self.board.get_square_status(current_pos)
 
         # Verify there is a friendly piece at the current position
-        if ~self.piece.is_friendly(move_piece):
+        if not self.piece.is_friendly(move_piece):
             raise ValueError(
-                "Move Invalid: You don't have a piece at your first position")
+                "Move Invalid: No friendly piece at the current position")
 
         target_piece = self.board.get_square_status(final_pos)
 
         # Verify there is not a friendly piece at the final position
         if self.piece.is_friendly(target_piece):
             raise ValueError(
-                "Move Invalid: Are you trying to sabotage yourself you have a piece at your goal position")
+                "Move Invalid: Friendly piece already present at the final position")
 
         # Check for kill move
-        if target_piece == None:
-            kill_move = False
-
-        if ~self.piece.is_friendly(target_piece):
-            kill_move = True
+        kill_move = target_piece is not None and not self.piece.is_friendly(
+            target_piece)
 
         return kill_move
 
@@ -320,12 +244,12 @@ class KinovaChessControl(object):
                 rospy.sleep(1)
 
             if not rospy.is_shutdown():
-                self.chess_board.calculate_global_orientation(self.aruco_positions)
+                self.chess_board.calculate_global_orientation(
+                    self.aruco_positions)
                 self.populate_board_position_map()
                 self.chess_board.populate_board(self.aruco_positions)
         except rospy.ROSInterruptException:
             rospy.loginfo("Initial calibration interrupted")
-
 
 
 if __name__ == "__main__":
@@ -349,10 +273,8 @@ if __name__ == "__main__":
 
     while not rospy.is_shutdown():
         try:
-            # Take and Process image and update aruco_positions
-            # TODO Move and wait till arm is in position for photo
-            # req = CaptureAndProcessImageRequest()
-            # capture_and_process_image_client(req)
+            req = CaptureAndProcessImageRequest()
+            capture_and_process_image_client(req)
             input_prompt = "Input piece current position and desired position \n(e.g., c2c3 to move piece on c2 to c3) or type 'exit' to quit: "
             move_resp = get_move_client(input_prompt)
             if move_resp.current_pos == "" and move_resp.final_pos == "":
