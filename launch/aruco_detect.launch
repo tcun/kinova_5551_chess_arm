@@ -1,13 +1,19 @@
 <launch>
-  <!-- Launch RealSense camera -->
-  <include file="$(find realsense2_camera)/launch/rs_camera.launch" />
-
-  <!-- Launch ArUco detection node -->
-  <node name="aruco_detect" pkg="aruco_detect" type="aruco_detect" output="screen">
-    <remap from="image" to="/camera/color/image_raw" />
-    <param name="dictionary" value="DICT_6X6_250"/>
+  <!-- Load the capture_and_process_image.py script -->
+  <node name="capture_and_process_image_node" pkg="kinova_5551_chess_arm" type="capture_and_process_image.py" output="screen">
   </node>
 
-  <!-- Launch custom capture and process image node -->
-  <node name="capture_and_process_image_node" pkg="kinova_5551_chess_arm" type="capture_and_process_image.py" />
+  <!-- Load the realsense2_camera node -->
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+  </include>
+
+  <!-- Load the aruco_detect node -->
+  <node name="aruco_detect_node" pkg="aruco_detect" type="aruco_detect" output="screen">
+    <remap from="image" to="/camera/color/image_raw"/>
+    <remap from="camera_info" to="/camera/color/camera_info"/>
+    <remap from="fiducial_transforms" to="/fiducial_transforms"/>
+  </node>
+
+  <!-- Add other nodes or configuration if necessary -->
+
 </launch>

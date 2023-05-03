@@ -45,7 +45,6 @@ class CaptureAndProcessImageNode:
         return TriggerResponse(success=True, message='Image captured and ArUco positions retrieved successfully')
     
     def handle_capture_and_process_image(self, request):
-        # Implement your service logic here
         response = CaptureAndProcessImageResponse()
         response.success = True
         return response

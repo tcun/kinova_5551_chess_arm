@@ -1,15 +1,16 @@
 <launch>
 
-  <arg name="robot_name" default="my_gen3" />
+  <arg name="robot_name" default="my_gen3_lite" />
   <!-- Launch RealSense camera -->
   <include file="$(find realsense2_camera)/launch/rs_camera.launch" />
 
-  <group ns="my_gen3_lite">
-    <param name="robot_description"
-      command="$(find xacro)/xacro --inorder $(find kortex_description)/robots/gen3_lite_gen3_lite_2f.xacro sim:=false" />
-    <!-- The semantic description that corresponds to the URDF -->
-    <include file="$(find gen3_lite_gen3_lite_2f_move_it_config )/launch/move_group.launch" />
-  </group>
+  <launch>
+    <!-- Load Kortex driver -->
+    <include file="$(find kortex_driver)/launch/kortex_driver.launch">
+      <arg name="start_rviz" value="false" />
+      <arg name="arm" value="gen3_lite" />
+    </include>
+  </launch>
 
   <!-- Launch ArUco detection node -->
   <node name="aruco_detect" pkg="aruco_detect" type="aruco_detect" output="screen">

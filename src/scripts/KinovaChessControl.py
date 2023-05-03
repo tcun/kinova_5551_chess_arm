@@ -235,7 +235,6 @@ class KinovaChessControl(object):
 
         self.aruco_positions = msg.aruco_positions
         self.chess_board.reset_board()
-
         self.chess_board.populate_board(self.aruco_positions)
 
     def initial_calibration(self):
