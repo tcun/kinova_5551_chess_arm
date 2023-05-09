@@ -1,0 +1,7 @@
+# aruco_detect_params.yaml
+
+aruco_detect:
+  dictionary: 7       # ArUco dictionary (0-16, 7 is DICT_7X7_1000)
+  marker_size: 0.1    # Marker size in meters
+  max_fiducial_id: 999 # Max fiducial ID to detect
+  marker_frame_suffix: "_marker" # Suffix for marker frames in TF

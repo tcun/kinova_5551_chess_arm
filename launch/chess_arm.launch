@@ -1,28 +1,22 @@
 <launch>
-
-  <arg name="robot_name" default="my_gen3_lite" />
-  <!-- Launch RealSense camera -->
-  <include file="$(find realsense2_camera)/launch/rs_camera.launch" />
-
-  <launch>
+  <!-- Load Kortex driver -->
     <!-- Load Kortex driver -->
     <include file="$(find kortex_driver)/launch/kortex_driver.launch">
-      <arg name="start_rviz" value="false" />
+      <arg name="start_rviz" value="true" />
       <arg name="arm" value="gen3_lite" />
     </include>
-  </launch>
 
-  <!-- Launch ArUco detection node -->
-  <node name="aruco_detect" pkg="aruco_detect" type="aruco_detect" output="screen">
-    <remap from="image" to="/camera/color/image_raw" />
-    <param name="dictionary" value="DICT_6X6_250" />
+
+  <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen">
+    <param name="video_device" value="/dev/video4" />
+    <param name="image_width" value="1920" />
+    <param name="image_height" value="1080" />
+    <param name="pixel_format" value="yuyv" />
+    <param name="camera_frame_id" value="usb_cam" />
+    <param name="io_method" value="mmap" />
   </node>
 
-  <!-- Launch custom capture and process image node -->
-  <node name="capture_and_process_image_node" pkg="kinova_5551_chess_arm"
-    type="capture_and_process_image.py" />
+  <node name="aruco_detector" pkg="kinova_5551_chess_arm" type="aruco_detector.py" output="screen" />
 
-  <!-- Launch KinovaChessControl node -->
-  <node name="kinova_chess_control" pkg="kinova_5551_chess_arm" type="KinovaChessControl.py"
-    output="screen" />
+
 </launch>

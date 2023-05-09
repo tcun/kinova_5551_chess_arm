@@ -11,12 +11,11 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   kortex_driver
-  kortex_gazebo
-  kortex_description
   cv_bridge
-  realsense2_camera
-  aruco_detect
   message_generation
+  usb_cam
+  image_view
+  actionlib_msgs
 )
 
 ## System dependencies are found with CMake's conventions
