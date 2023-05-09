@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   kortex_driver
+  kortex_gazebo
   cv_bridge
   message_generation
   usb_cam

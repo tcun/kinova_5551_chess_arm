@@ -150,7 +150,35 @@ class ChessBoard(object):
 
         return x_coordinate, y_coordinate
     
+    # def update_board(self):
+    #     self.board_matrix = [[None for _ in range(8)] for _ in range(8)]  # Clear the board
+    #     for i in range(0, len(self.chess_piece_positions), 4):  # Process in sets of 4 (id, x, y, z)
+    #         piece_id = self.chess_piece_positions[i]
+    #         piece_pos_camera_frame = self.chess_piece_positions[i+1:i+4]
+            
+    #         # Transform to world frame
+    #         piece_pos_world_frame = self.transform_to_world_frame(piece_pos_camera_frame)
+            
+    #         # Find the nearest square
+    #         square = self.find_nearest_square(piece_pos_world_frame)
+            
+    #         # Update the board matrix
+    #         self.board_matrix[square[0]][square[1]] = piece_id
 
+
+    # def find_nearest_square(self, piece_pos):
+    #     piece_pos = np.array(piece_pos)
+    #     min_distance = float('inf')
+    #     min_idx = None
+    #     for i in range(8):
+    #         for j in range(8):
+    #             distance = np.linalg.norm(piece_pos - np.array(self.chess_board[i][j]))
+    #             if distance < min_distance:
+    #                 min_distance = distance
+    #                 min_idx = (i, j)
+    #     return min_idx
+
+    
 
 ##### UNFINISHED #######
 class ChessPiece(object):
@@ -202,7 +230,7 @@ class KinovaChessControl(object):
         #open = 60% open
         #grab = 10% open 
         #close = 0% open 
-        self.gripper_setting = {"open": 0.3, "grab":0.1, "close":0} 
+        self.gripper_setting = {"open": 0.3, "grab":0.1, "close":0, "wide":1} 
 
         #Initialize heights for moving pieces around
         """Adjust Move and Pick Heights"""
@@ -429,49 +457,68 @@ class KinovaChessControl(object):
 
     def user_calibration(self):
         success = True
-        # go to where the board thinks the corner of the board is
-        pose = self.engine.set_pose_msg(pos_x= self.board.global_orientation[0], 
-                                                  pos_y=self.board.global_orientation[1], 
-                                                  pos_z=self.height_setting["over"], 
-                                                  ori_w=self.gripper_ori["ori_w"], 
-                                                  ori_x=self.gripper_ori["ori_x"], 
-                                                  ori_y=self.gripper_ori["ori_y"], 
-                                                  ori_z=self.gripper_ori["ori_z"])
-        print("Going to outtermost corner of square A1")
-        print("pose message: ", pose)
-        success &= self.move_gripper(pose)
-        pose.position.z = self.height_setting["pick"]
-        success &= self.move_gripper(pose)
-        input("robot arm should be pointing at the outmost corner of the chess board press return to continue")
-        pose.position.z = self.height_setting["over"]
-        success &= self.move_gripper(pose)
-        
-        print("moving to position H8")
-        #get position coordinate
-        x, y = self.board.get_square_coordinates(position="h8")
+        try:
+            # go to where the board thinks the corner of the board is
+            pose = self.engine.set_pose_msg(pos_x= self.board.global_orientation[0], 
+                                                    pos_y=self.board.global_orientation[1], 
+                                                    pos_z=self.height_setting["over"], 
+                                                    ori_w=self.gripper_ori["ori_w"], 
+                                                    ori_x=self.gripper_ori["ori_x"], 
+                                                    ori_y=self.gripper_ori["ori_y"], 
+                                                    ori_z=self.gripper_ori["ori_z"])
+            print("Going to outtermost corner of square A1")
+            print("pose message: ", pose)
+            success &= self.move_gripper(pose)
+            pose.position.z = self.height_setting["pick"]
+            success &= self.move_gripper(pose)
+            input("robot arm should be pointing at the outmost corner of the chess board press return to continue")
+            pose.position.z = self.height_setting["over"]
+            success &= self.move_gripper(pose)
+            
+            print("moving to position a8")
+            #get position coordinate
+            x, y = self.board.get_square_coordinates(position="a8")
 
-        #set pose msg to above target location
-        pose.position.x = x
-        pose.position.y = y
-        success &= self.move_gripper(pose)
-        pose.position.z = self.height_setting["pick"]
-        #success &= self.move_gripper(pose)
-        input("robot arm should be pointing to the center of H8 press return to continue")
-        pose.position.z = self.height_setting["over"]
-        success &= self.move_gripper(pose)
-        
+            #set pose msg to above target location
+            pose.position.x = x
+            pose.position.y = y
+            success &= self.move_gripper(pose)
+            pose.position.z = self.height_setting["pick"]
+            success &= self.move_gripper(pose)
+            input("robot arm should be pointing to the center of H8 press return to continue")
+            pose.position.z = self.height_setting["over"]
+            success &= self.move_gripper(pose)
+            print("moving to position 8")
+            #get position coordinate
+            x, y = self.board.get_square_coordinates(position="h8")
 
-        #get position coordinate
-        print("moving to position A1")
-        x, y = self.board.get_square_coordinates(position="a1")
+            #set pose msg to above target location
+            pose.position.x = x
+            pose.position.y = y
+            success &= self.move_gripper(pose)
+            pose.position.z = self.height_setting["pick"]
+            success &= self.move_gripper(pose)
+            input("robot arm should be pointing to the center of H8 press return to continue")
+            pose.position.z = self.height_setting["over"]
+            success &= self.move_gripper(pose)
+            
+
+            #get position coordinate
+            print("moving to position A1")
+            x, y = self.board.get_square_coordinates(position="a1")
 
 
-        #set pose msg to above target location
-        pose.position.x = x
-        pose.position.y = y
-        print("pose message: ", pose)
-        success &= self.move_gripper(pose)
-        input("robot arm should be pointing to the center of a1 press return to continue")
+            #set pose msg to above target location
+            pose.position.x = x
+            pose.position.y = y
+            print("pose message: ", pose)
+            success &= self.move_gripper(pose)
+            pose.position.z = self.height_setting["pick"]
+            success &= self.move_gripper(pose)
+            input("robot arm should be pointing to the center of a1 press return to continue")
+            
+        except KeyboardInterrupt:
+            print("Interrupted by keyboard. Stopping...")
 
     def reach_custom_joint_state(self, state_name):
         # get saved joint state
@@ -480,21 +527,17 @@ class KinovaChessControl(object):
         self.engine.reach_joint_angles(joint_target, 0.01)
 
 
-    
-
-
 if __name__=="__main__":
     a = KinovaChessControl()
     a.reach_custom_joint_state("cali_1")
     
+   
+    a.engine.reach_gripper_position(a.gripper_setting["grab"])
+    a.user_calibration()
+    a.engine.reach_gripper_position(a.gripper_setting["wide"])
     print(a.engine.get_piece_position(205.0))
     # position = input("give a square potision(i.e. a2): " )
     a.board.get_square_coordinates("d3")
-
-    # a.engine.reach_gripper_position(a.gripper_setting["open"])
-    # a.engine.reach_gripper_position(a.gripper_setting["grab"])
-    # a.engine.reach_gripper_position(a.gripper_setting["open"])
-    # a.user_calibration()
     # a.reach_custom_joint_state("cali_1")
 
     while True:
