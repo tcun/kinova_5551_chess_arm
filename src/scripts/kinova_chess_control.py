@@ -34,9 +34,9 @@ class ChessBoard(object):
                                 [208,207,206,205,204,203,202,201],
                                 [0,0,0,0,0,0,0,0],
                                 [0,0,0,0,0,0,0,0],
+                                [0,0,0,304,0,0,0,0],
                                 [0,0,0,0,0,0,0,0],
-                                [0,0,0,0,0,0,0,0],
-                                [301,302,303,304,305,306,307,308],
+                                [301,302,303,0,305,306,307,308],
                                 [309,311,313,315,316,314,312,310]])
         self.letter_to_num_map = {"a":0,"b":1,"c":2,
                             "d":3,"e":4,"f":5,
@@ -47,17 +47,27 @@ class ChessBoard(object):
     # Need more time, but scan board after every move to update the board
     # def scan_board(self):
 
+    def chess_move_to_index(self,move):
+        letter_to_num_map = {"a":0,"b":1,"c":2,"d":3,"e":4,"f":5,"g":6,"h": 7}
+        col = letter_to_num_map[move[0]]
+        row = int(move[1]) - 1  # Subtract from 8 because matrix index 0 starts from top
+        return row, col
+
     def update_board(self, target_pos, goal_pos):
         # Convert positions to indexable format
-        target_idx = (8 - target_pos[1], self.letter_to_num_map[target_pos[0]])
-        goal_idx = (8 - goal_pos[1], self.letter_to_num_map[goal_pos[0]])
+        trow, tcol = self.chess_move_to_index(target_pos)
+        grow, gcol = self.chess_move_to_index(goal_pos)
+
+
+        print("Target and Goal: (", trow, tcol,") (", grow, gcol, ")")
 
         # Check if target position is not 0
-        if self.board_matrix[target_idx] != 0:
+        if self.board_matrix[trow][tcol] != 0:
             # Move piece from target to goal position
-            self.board_matrix[goal_idx] = self.board_matrix[target_idx]
+            self.board_matrix[grow][gcol] = self.board_matrix[trow][tcol]
             # Set target position to 0
-            self.board_matrix[target_idx] = 0
+            self.board_matrix[trow][tcol] = 0
+            print("Matrix", self.board_matrix)
 
         
     # def update_board(self, pos_1, pos_2, kill_bool):
@@ -159,10 +169,12 @@ class ChessBoard(object):
         return piece_number
     
     def get_graveyard_coordinates(self):
-        x_coordinate = .3
-        y_coordinate = -.3
+        x_coordinate = .35
+        y_coordinate = -.3514
+        z_coordinate = 0
 
-        return x_coordinate, y_coordinate
+        return x_coordinate, y_coordinate, z_coordinate
+
     
     # def update_board(self):
     #     self.board_matrix = [[None for _ in range(8)] for _ in range(8)]  # Clear the board
@@ -197,9 +209,9 @@ class ChessBoard(object):
 
 ##### UNFINISHED #######
 class ChessPiece(object):
-    def __init__(self) -> None:
+    def __init__(self, chessboard) -> None:
         self.engine = PickAndPlace()
-        self.chessboard = ChessBoard()
+        self.chessboard = chessboard
     
     def is_friendly(self, piece_number):
         # Check if piece is friendly (i.e. same team)
@@ -215,13 +227,13 @@ class ChessPiece(object):
        ####### Do dumb stuff for the arm debug code#########
        ###### this is not how this should work once we have the camera####
        ###### pieces should understand their own position #####
-        self.engine.get_piece_position(piece_number)
+        # self.engine.get_piece_position(piece_number)
 
         index = np.where(self.chessboard.board_matrix == piece_number)
         num_to_letter = {0:"a", 1:"b", 2:"c", 
                          3:"d", 4:"e", 5:"f",
                          6:"g", 7:"h"}
-        pos= num_to_letter[index[1][0]] + str((index[0][0] + 1))
+        pos = num_to_letter[index[1][0]] + str((index[0][0] + 1))
         print("with debug method getting pirce from position", pos)
 
         x , y = self.chessboard.get_square_coordinates(position=pos)
@@ -232,7 +244,7 @@ class KinovaChessControl(object):
         
         self.engine = PickAndPlace()
         self.board = ChessBoard()
-        self.piece = ChessPiece()
+        self.piece = ChessPiece(self.board)
 
         #Initialize gripper orientation to be straight up and down. 
         self.gripper_ori = {"ori_x": 0.7119706821454233, 
@@ -245,7 +257,7 @@ class KinovaChessControl(object):
         #open = 60% open
         #grab = 10% open 
         #close = 0% open 
-        self.gripper_setting = {"open": 0.3, "grab":0.1, "close":0, "wide":1} 
+        self.gripper_setting = {"open": 0.28, "grab":0.1, "close":0, "wide":1} 
 
         #Initialize heights for moving pieces around
         """Adjust Move and Pick Heights"""
@@ -275,7 +287,8 @@ class KinovaChessControl(object):
                 first_move = False
         
         return current_pos, final_pos, kill_bool
-        
+    
+
     def process_move(self, move_string):
         #Function to take in movement string sanitize the input and check the move type.
         ##Sanitize input before parsing##
@@ -354,14 +367,10 @@ class KinovaChessControl(object):
             #remove the victim
             self.remove_piece(final_pos)
 
-            #move to empty location
-            self.move_piece(current_pos, final_pos)
-
-        else:
-            #move to empty location
-            self.move_piece(current_pos, final_pos)
+        self.move_piece(current_pos, final_pos)
 
         self.board.update_board(current_pos, final_pos)
+
         self.reach_custom_joint_state("cali_1")
         self.engine.get_cartesian_pose()
         return 
@@ -401,6 +410,7 @@ class KinovaChessControl(object):
         # piece_location = self.piece.get_world_coord(piece_number) 
         # piece_location.position.z = elf.height_setting["over"]
         # piece_location = pose
+        print("getting piece at X: ", x, "y: ", y)
 
         #move to xy location above piece
         success &= self.move_gripper(piece_location)
@@ -429,7 +439,7 @@ class KinovaChessControl(object):
         place_location = self.engine.get_cartesian_pose() #We assume here we just picked up a piece and are at movement height
         place_location.position.x = x
         place_location.position.y = y
-
+        print("placing piece at X: ", x, "y: ", y)
         #move to above target square location
         success &= self.move_gripper(place_location)
         #move down to pick/place height
@@ -452,8 +462,8 @@ class KinovaChessControl(object):
         #set pose to graveyard position
         x, y, z = self.board.get_graveyard_coordinates()
         grave_location = self.engine.set_pose_msg(pos_x= x, 
-                                                  pos_y=y, 
-                                                  pos_z=z, 
+                                                  pos_y= y, 
+                                                  pos_z=self.height_setting["pick"], 
                                                   ori_w=self.gripper_ori["ori_w"], 
                                                   ori_x=self.gripper_ori["ori_x"], 
                                                   ori_y=self.gripper_ori["ori_y"], 
@@ -544,9 +554,9 @@ if __name__=="__main__":
     a.reach_custom_joint_state("cali_1")
     
    
-    # a.engine.reach_gripper_position(a.gripper_setting["grab"])
+    a.engine.reach_gripper_position(a.gripper_setting["grab"])
     # a.user_calibration()
-    a.engine.reach_gripper_position(a.gripper_setting["wide"])
+    # a.engine.reach_gripper_position(a.gripper_setting["wide"])
     print(a.engine.get_piece_position(205.0))
     # position = input("give a square potision(i.e. a2): " )
     a.board.get_square_coordinates("d3")

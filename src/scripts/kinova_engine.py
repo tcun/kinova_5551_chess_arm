@@ -192,7 +192,7 @@ class PickAndPlace(object):
 
     # Get the current joint positions
     joint_positions = arm_group.get_current_joint_values()
-    rospy.loginfo("Printing current joint positions before movement :")
+    # rospy.loginfo("Printing current joint positions before movement :")
     for p in joint_positions: rospy.loginfo(p)
 
     # Set the goal joint tolerance
@@ -206,7 +206,7 @@ class PickAndPlace(object):
 
     # Show joint positions after movement
     new_joint_positions = arm_group.get_current_joint_values()
-    rospy.loginfo("Printing current joint positions after movement :")
+    # rospy.loginfo("Printing current joint positions after movement :")
     for p in new_joint_positions: rospy.loginfo(p)
     return success
 
