@@ -140,7 +140,6 @@ class PickAndPlace(object):
         print(camera_pose_base)
         return camera_pose_base
     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-        # rospy.logerr("Failed to transform pose from 'gripper_base_link' to 'base_link'")
         return None
 
   def get_all_piece_positions(self):
@@ -148,14 +147,17 @@ class PickAndPlace(object):
   
   def get_piece_position(self, id):
     # Iterates every fourth index because each set consists of 4 elements (ID, x, y, z)
-    for i in range(0, len(self.chess_piece_positions)-3, 4):
-        if self.chess_piece_positions[i] == id:
-            id, pose = self.chess_piece_positions[i]
-            x = pose.pose.position.x
-            y = pose.pose.position.y
-            z = pose.pose.position.z
-            print("Piece with ", id, " is at " "X: ", x," Y: ", y, " Z: ",z)
-            return x, y, z
+    for i in range(5):
+      print("Attempting to get piece position: ", i)
+      for i in range(0, len(self.chess_piece_positions)-3, 4):
+          if self.chess_piece_positions[i] == id:
+              id, pose = self.chess_piece_positions[i]
+              x = pose.pose.position.x
+              y = pose.pose.position.y
+              z = pose.pose.position.z
+              print("Piece with ", id, " is at " "X: ", x," Y: ", y, " Z: ",z)
+              return x, y, z
+        
     return None
 
   

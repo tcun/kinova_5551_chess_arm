@@ -59,22 +59,6 @@ class ChessBoard(object):
             # Set target position to 0
             self.board_matrix[target_idx] = 0
 
-        
-    # def update_board(self, pos_1, pos_2, kill_bool):
-    #     def flip(pos_1, pos_2):
-    #         temp = pos_1
-    #         self.board_matrix[pos_1] = self.board_matrix[pos_2]
-    #         self.board_matrix[pos_2] = self.board_matrix[temp]
-
-    #     init_col = self.letter_to_num_map[pos_1[0]]
-    #     init_row = int(pos_1[1]-1)
-    #     end_col = self.letter_to_num_map[pos_2[2]]
-    #     end_row = int(pos_2[3]-1)
-    #     if kill_bool:
-    #         self.board_matrix[end_row, end_col] = 0
-    #     flip([init_row,init_col], [end_row, end_col])
-    #     print(self.board_matrix)
-
 
     ############ UNUSED: Arm Movement Debug #####################    
     def calculate_global_orientation(self):
@@ -159,40 +143,10 @@ class ChessBoard(object):
         return piece_number
     
     def get_graveyard_coordinates(self):
-        x_coordinate = .3
-        y_coordinate = -.3
+        x_coordinate = .35
+        y_coordinate = -.35
 
         return x_coordinate, y_coordinate
-    
-    # def update_board(self):
-    #     self.board_matrix = [[None for _ in range(8)] for _ in range(8)]  # Clear the board
-    #     for i in range(0, len(self.chess_piece_positions), 4):  # Process in sets of 4 (id, x, y, z)
-    #         piece_id = self.chess_piece_positions[i]
-    #         piece_pos_camera_frame = self.chess_piece_positions[i+1:i+4]
-            
-    #         # Transform to world frame
-    #         piece_pos_world_frame = self.transform_to_world_frame(piece_pos_camera_frame)
-            
-    #         # Find the nearest square
-    #         square = self.find_nearest_square(piece_pos_world_frame)
-            
-    #         # Update the board matrix
-    #         self.board_matrix[square[0]][square[1]] = piece_id
-
-
-    # def find_nearest_square(self, piece_pos):
-    # Given an aruco number retuen which board quare position that chess piece is at. 
-    #     piece_pos = np.array(piece_pos)
-    #     min_distance = float('inf')
-    #     min_idx = None
-    #     for i in range(8):
-    #         for j in range(8):
-    #             distance = np.linalg.norm(piece_pos - np.array(self.chess_board[i][j]))
-    #             if distance < min_distance:
-    #                 min_distance = distance
-    #                 min_idx = (i, j)
-    #     return min_idx
-
     
 
 ##### UNFINISHED #######
@@ -211,23 +165,10 @@ class ChessPiece(object):
         return friend_bool
 
     def get_world_coord(self, piece_number):
-
-       ####### Do dumb stuff for the arm debug code#########
-       ###### this is not how this should work once we have the camera####
-       ###### pieces should understand their own position #####
-        self.engine.get_piece_position(piece_number)
-
-        index = np.where(self.chessboard.board_matrix == piece_number)
-        num_to_letter = {0:"a", 1:"b", 2:"c", 
-                         3:"d", 4:"e", 5:"f",
-                         6:"g", 7:"h"}
-        pos= num_to_letter[index[1][0]] + str((index[0][0] + 1))
-        print("with debug method getting pirce from position", pos)
-
-        x , y = self.chessboard.get_square_coordinates(position=pos)
+        x, y, _ = self.engine.get_piece_position(piece_number)
         return x, y
 
-class KinovaChessControl(object):
+class ChessControl(object):
     def __init__(self) -> None:
         
         self.engine = PickAndPlace()
@@ -384,13 +325,12 @@ class KinovaChessControl(object):
 
     def pick_piece(self, piece_number):
         success = True
-
         #Get Piece Coordinate
         x, y = self.piece.get_world_coord(piece_number)
 
         #set pose msg to above piece
         piece_location = self.engine.set_pose_msg(pos_x= x, 
-                                                  pos_y=y, 
+                                                  pos_y= y, 
                                                   pos_z=self.height_setting["over"], 
                                                   ori_w=self.gripper_ori["ori_w"], 
                                                   ori_x=self.gripper_ori["ori_x"], 
@@ -540,7 +480,7 @@ class KinovaChessControl(object):
 
 
 if __name__=="__main__":
-    a = KinovaChessControl()
+    a = ChessControl()
     a.reach_custom_joint_state("cali_1")
     
    
