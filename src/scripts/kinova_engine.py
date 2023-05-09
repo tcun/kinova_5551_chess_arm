@@ -88,9 +88,10 @@ class PickAndPlace(object):
       pose.pose.orientation.w = 1.0  # no orientation information
       # self.chess_piece_positions.append((id, pose))
       cam_tf = self.get_camera_pose_in_base_frame()
-      pose_transformed = self.transform_pose(pose, cam_tf)
-      if pose_transformed is not None:
-          self.chess_piece_positions.append((id, pose_transformed))
+      if cam_tf is not None: 
+        pose_transformed = self.transform_pose(pose, cam_tf)
+        if pose_transformed is not None:
+            self.chess_piece_positions.append((id, pose_transformed))
 
   def transform_pose(self, pose, camera_to_base_link):
     if pose is None or camera_to_base_link is None:
@@ -108,36 +109,38 @@ class PickAndPlace(object):
 
     # Apply the camera to end effector transform
     pose_in_base_frame = tf2_geometry_msgs.do_transform_pose(pose, pose_transform)
+    # print(pose_in_base_frame)
     return pose_in_base_frame
   
   def get_camera_pose_in_base_frame(self):  
     # Create a tf2_ros.Buffer and a tf2_ros.TransformListener
-    tf_buffer = tf.Buffer(rospy.Duration(12000.0))  # 1200 seconds buffer size
+    tf_buffer = tf.Buffer(rospy.Duration(1200.0))  # 1200 seconds buffer size
     tf_listener = tf.TransformListener(tf_buffer)
 
     # Define a PoseStamped for the camera pose in the end effector frame
     camera_pose_end_effector = PoseStamped()
     camera_pose_end_effector.header.stamp = rospy.Time.now()
-    camera_pose_end_effector.header.frame_id = "end_effector_link"
+    camera_pose_end_effector.header.frame_id = "gripper_base_link"
     # camera_pose_end_effector.header.child_frame_id = "usb_cam"
     
     # Set the translation
-    camera_pose_end_effector.pose.position.x = 3.22063
-    camera_pose_end_effector.pose.position.y = 1.24822
-    camera_pose_end_effector.pose.position.z = -1.13375
+    camera_pose_end_effector.pose.position.x = 0.45
+    camera_pose_end_effector.pose.position.y = 0
+    camera_pose_end_effector.pose.position.z = 0.15
 
     # Set the orientation using the provided quaternion
-    camera_pose_end_effector.pose.orientation.x = -0.462232
-    camera_pose_end_effector.pose.orientation.y = -0.399698
-    camera_pose_end_effector.pose.orientation.z = 0.620317
-    camera_pose_end_effector.pose.orientation.w = 0.491722
-
+    camera_pose_end_effector.pose.orientation.x = 0
+    camera_pose_end_effector.pose.orientation.y = 0.425
+    camera_pose_end_effector.pose.orientation.z = 0
+    camera_pose_end_effector.pose.orientation.w = 0.905
+    # print(camera_pose_end_effector)
     try:
         # Transform the camera pose from the end effector frame to the base frame
         camera_pose_base = tf_buffer.transform(camera_pose_end_effector, "base_link", rospy.Duration(1.0))
+        print(camera_pose_base)
         return camera_pose_base
     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-        rospy.logerr("Failed to transform pose from 'end_effector_link' to 'base_link'")
+        # rospy.logerr("Failed to transform pose from 'gripper_base_link' to 'base_link'")
         return None
 
   def get_all_piece_positions(self):

@@ -44,22 +44,36 @@ class ChessBoard(object):
         # global orientation in x, y, theta
         self.global_orientation = .27, -.186, math.pi
         
-        
-        
-    def update_board(self, pos_1, pos_2, kill_bool):
-        def flip(pos_1, pos_2):
-            temp = pos_1
-            self.board_matrix[pos_1] = self.board_matrix[pos_2]
-            self.board_matrix[pos_2] = self.board_matrix[temp]
+    # Need more time, but scan board after every move to update the board
+    # def scan_board(self):
 
-        init_col = self.letter_to_num_map[pos_1[0]]
-        init_row = int(pos_1[1]-1)
-        end_col = self.letter_to_num_map[pos_2[2]]
-        end_row = int(pos_2[3]-1)
-        if kill_bool:
-            self.board_matrix[end_row, end_col] = 0
-        flip([init_row,init_col], [end_row, end_col])
-        print(self.board_matrix)
+    def update_board(self, target_pos, goal_pos):
+        # Convert positions to indexable format
+        target_idx = (8 - target_pos[1], self.letter_to_num_map[target_pos[0]])
+        goal_idx = (8 - goal_pos[1], self.letter_to_num_map[goal_pos[0]])
+
+        # Check if target position is not 0
+        if self.board_matrix[target_idx] != 0:
+            # Move piece from target to goal position
+            self.board_matrix[goal_idx] = self.board_matrix[target_idx]
+            # Set target position to 0
+            self.board_matrix[target_idx] = 0
+
+        
+    # def update_board(self, pos_1, pos_2, kill_bool):
+    #     def flip(pos_1, pos_2):
+    #         temp = pos_1
+    #         self.board_matrix[pos_1] = self.board_matrix[pos_2]
+    #         self.board_matrix[pos_2] = self.board_matrix[temp]
+
+    #     init_col = self.letter_to_num_map[pos_1[0]]
+    #     init_row = int(pos_1[1]-1)
+    #     end_col = self.letter_to_num_map[pos_2[2]]
+    #     end_row = int(pos_2[3]-1)
+    #     if kill_bool:
+    #         self.board_matrix[end_row, end_col] = 0
+    #     flip([init_row,init_col], [end_row, end_col])
+    #     print(self.board_matrix)
 
 
     ############ UNUSED: Arm Movement Debug #####################    
@@ -167,6 +181,7 @@ class ChessBoard(object):
 
 
     # def find_nearest_square(self, piece_pos):
+    # Given an aruco number retuen which board quare position that chess piece is at. 
     #     piece_pos = np.array(piece_pos)
     #     min_distance = float('inf')
     #     min_idx = None
@@ -243,8 +258,6 @@ class KinovaChessControl(object):
         self.saved_joint_states = {"cali_1":[-0.1753041766511192, 0.22052864670230046, 
                                               2.013744464573454, -2.2268759150319504, 
                                               -1.268418886098428, 0.03974395084390652]}
-
-
 
     def get_move_from_user(self):
         first_move = True
@@ -341,15 +354,14 @@ class KinovaChessControl(object):
             #remove the victim
             self.remove_piece(final_pos)
 
-            self.board.update_board(current_pos, final_pos, kill_move)
             #move to empty location
             self.move_piece(current_pos, final_pos)
 
         else:
             #move to empty location
             self.move_piece(current_pos, final_pos)
-            #self.board.update_board(current_pos, final_pos, False)
-        
+
+        self.board.update_board(current_pos, final_pos)
         self.reach_custom_joint_state("cali_1")
         self.engine.get_cartesian_pose()
         return 
@@ -532,13 +544,13 @@ if __name__=="__main__":
     a.reach_custom_joint_state("cali_1")
     
    
-    a.engine.reach_gripper_position(a.gripper_setting["grab"])
-    a.user_calibration()
+    # a.engine.reach_gripper_position(a.gripper_setting["grab"])
+    # a.user_calibration()
     a.engine.reach_gripper_position(a.gripper_setting["wide"])
     print(a.engine.get_piece_position(205.0))
     # position = input("give a square potision(i.e. a2): " )
     a.board.get_square_coordinates("d3")
-    # a.reach_custom_joint_state("cali_1")
+    a.reach_custom_joint_state("cali_1")
 
     while True:
         try:
@@ -617,25 +629,5 @@ if __name__=="__main__":
 
 
 
-    ## Sanitize input
-        ### success = true
-        ### success &= len(input) == 4 -- check for 4 charectors 
-        ### success &= -- make sure first is letter a b c d e f g h 
-        ### success &= -- make sure second is number 1-8
-        ### success &= -- make sure third is letter a b c d e f g h 
-        ### success &= -- make sure second is number 1-8
-        ###### if not success: print(input invalid)
 
-    # Verify move
-    # check if the desired piece is on the board. 
-    ## verify_move(self, )
-    ## ChessBoard.Status("c2") -- is one of my pieces there?
-    ## if my piece is there continue 
-    ## elseif no piece is there print(There's no piece there)
-    ## elseif opponents piece is there print(That's not my piece)
-
-
-    # Check if there is a friendly at the desired position == bad move
-    # check if there is a enemy at the position == run kill move 
-    # if there is no piece there  == run normal move 
     
