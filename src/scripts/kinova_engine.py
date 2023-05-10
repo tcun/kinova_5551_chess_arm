@@ -76,88 +76,91 @@ class PickAndPlace(object):
       self.is_init_success = True
 
   def chess_pieces_callback(self, msg):
+    # Initialize or clear the chess piece positions list
     self.chess_piece_positions = []
+    
+    # Process the incoming message data
     for i in range(0, len(msg.data)-3, 4):
-      id = msg.data[i]
-      pose = PoseStamped()
-      pose.header.stamp = rospy.Time.now()
-      pose.header.frame_id = "camera_link"  # assuming this is the camera frame
-      pose.pose.position.x = msg.data[i + 1]
-      pose.pose.position.y = msg.data[i + 2]
-      pose.pose.position.z = msg.data[i + 3]
-      pose.pose.orientation.w = 1.0  # no orientation information
-      # self.chess_piece_positions.append((id, pose))
-      cam_tf = self.get_camera_pose_in_base_frame()
-      if cam_tf is not None: 
-        pose_transformed = self.transform_pose(pose, cam_tf)
-        if pose_transformed is not None:
-            self.chess_piece_positions.append((id, pose_transformed))
+        id = msg.data[i]
+        pose = PoseStamped()
+        pose.header.stamp = rospy.Time.now()
+        pose.header.frame_id = "camera_link"  # Assuming this is the camera frame
+        pose.pose.position.x = msg.data[i + 1]
+        pose.pose.position.y = msg.data[i + 2]
+        pose.pose.position.z = msg.data[i + 3]
+        pose.pose.orientation.w = 1.0  # No orientation information
+
+        cam_tf = self.get_camera_pose_in_base_frame()
+        if cam_tf is not None: 
+            pose_transformed = self.transform_pose(pose, cam_tf)
+            if pose_transformed is not None:
+                self.chess_piece_positions.append((id, pose_transformed))
 
   def transform_pose(self, pose, camera_to_base_link):
-    if pose is None or camera_to_base_link is None:
-      print("Pose error")
-      return 
-    # Convert the PoseStamped message to a geometry_msgs/TransformStamped message
-    pose_transform = TransformStamped()
-    pose_transform.header.stamp = rospy.Time.now()  # Adjust this as necessary
-    pose_transform.header.frame_id = camera_to_base_link.header.frame_id
-    pose_transform.child_frame_id = pose.header.frame_id
-    pose_transform.transform.translation.x = pose.pose.position.x
-    pose_transform.transform.translation.y = pose.pose.position.y
-    pose_transform.transform.translation.z = pose.pose.position.z
-    pose_transform.transform.rotation = pose.pose.orientation
+      if pose is None or camera_to_base_link is None:
+          print("Pose error")
+          return 
 
-    # Apply the camera to end effector transform
-    pose_in_base_frame = tf2_geometry_msgs.do_transform_pose(pose, pose_transform)
-    # print(pose_in_base_frame)
-    return pose_in_base_frame
-  
-  def get_camera_pose_in_base_frame(self):  
-    # Create a tf2_ros.Buffer and a tf2_ros.TransformListener
-    tf_buffer = tf.Buffer(rospy.Duration(1200.0))  # 1200 seconds buffer size
-    tf_listener = tf.TransformListener(tf_buffer)
+      # Convert the PoseStamped message to a geometry_msgs/TransformStamped message
+      pose_transform = TransformStamped()
+      pose_transform.header.stamp = rospy.Time.now()  # Adjust this as necessary
+      pose_transform.header.frame_id = camera_to_base_link.header.frame_id
+      pose_transform.child_frame_id = pose.header.frame_id
+      pose_transform.transform.translation.x = pose.pose.position.x
+      pose_transform.transform.translation.y = pose.pose.position.y
+      pose_transform.transform.translation.z = pose.pose.position.z
+      pose_transform.transform.rotation = pose.pose.orientation
 
-    # Define a PoseStamped for the camera pose in the end effector frame
-    camera_pose_end_effector = PoseStamped()
-    camera_pose_end_effector.header.stamp = rospy.Time.now()
-    camera_pose_end_effector.header.frame_id = "gripper_base_link"
-    # camera_pose_end_effector.header.child_frame_id = "usb_cam"
+      # Apply the camera to end effector transform
+      pose_in_base_frame = tf2_geometry_msgs.do_transform_pose(pose, pose_transform)
+      return pose_in_base_frame
     
-    # Set the translation
-    camera_pose_end_effector.pose.position.x = 0.45
-    camera_pose_end_effector.pose.position.y = 0
-    camera_pose_end_effector.pose.position.z = 0.15
+  def get_camera_pose_in_base_frame(self):  
+      # Create a tf2_ros.Buffer and a tf2_ros.TransformListener
+      tf_buffer = tf.Buffer(rospy.Duration(1200.0))  # 1200 seconds buffer size
+      tf_listener = tf.TransformListener(tf_buffer)
 
-    # Set the orientation using the provided quaternion
-    camera_pose_end_effector.pose.orientation.x = 0
-    camera_pose_end_effector.pose.orientation.y = 0.425
-    camera_pose_end_effector.pose.orientation.z = 0
-    camera_pose_end_effector.pose.orientation.w = 0.905
-    # print(camera_pose_end_effector)
-    try:
-        # Transform the camera pose from the end effector frame to the base frame
-        camera_pose_base = tf_buffer.transform(camera_pose_end_effector, "base_link", rospy.Duration(1.0))
-        print(camera_pose_base)
-        return camera_pose_base
-    except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-        # rospy.logerr("Failed to transform pose from 'gripper_base_link' to 'base_link'")
-        return None
+      # Define a PoseStamped for the camera pose in the end effector frame
+      camera_pose_end_effector = PoseStamped()
+      camera_pose_end_effector.header.stamp = rospy.Time.now()
+      camera_pose_end_effector.header.frame_id = "gripper_base_link"
+
+      # Set the translation
+      camera_pose_end_effector.pose.position.x = 0.45
+      camera_pose_end_effector.pose.position.y = 0
+      camera_pose_end_effector.pose.position.z = 0.15
+
+      # Set the orientation using the provided quaternion
+      camera_pose_end_effector.pose.orientation.x = 0
+      camera_pose_end_effector.pose.orientation.y = 0.425
+      camera_pose_end_effector.pose.orientation.z = 0
+      camera_pose_end_effector.pose.orientation.w = 0.905
+
+      try:
+          # Transform the camera pose from the end effector frame to the base frame
+          camera_pose_base = tf_buffer.transform(camera_pose_end_effector, "base_link", rospy.Duration(1.0))
+          return camera_pose_base
+      except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+          return None
 
   def get_all_piece_positions(self):
-    return self.chess_piece_positions
-  
+      # This function returns all the chess piece positions
+      return self.chess_piece_positions
+    
   def get_piece_position(self, id):
-    # Iterates every fourth index because each set consists of 4 elements (ID, x, y, z)
-    for i in range(0, len(self.chess_piece_positions)-3, 4):
-        if self.chess_piece_positions[i] == id:
-            id, pose = self.chess_piece_positions[i]
-            x = pose.pose.position.x
-            y = pose.pose.position.y
-            z = pose.pose.position.z
-            print("Piece with ", id, " is at " "X: ", x," Y: ", y, " Z: ",z)
-            return x, y, z
-    return None
+      # This function returns the position of a specific chess piece based on its ID
 
+      # Iterates through the list of tuples in self.chess_piece_positions
+      for piece in self.chess_piece_positions:
+          piece_id, pose = piece
+          if piece_id == id:
+              # Extracts the x, y, z coordinates from the pose
+              x = pose.pose.position.x
+              y = pose.pose.position.y
+              z = pose.pose.position.z
+              print(f"Piece with ID: {id} is at X: {x}, Y: {y}, Z: {z}")
+              return x, y, z
+      return None
   
   def set_pose_msg(self, pos_x,pos_y,pos_z,ori_x,ori_y,ori_z,ori_w):
     #set each parameter of a pose message msg.pose

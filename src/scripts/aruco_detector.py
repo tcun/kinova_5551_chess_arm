@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+# Import required modules
 import rospy
 import yaml
 import cv2
@@ -24,9 +25,6 @@ class ArucoDetector:
         self.aruco_params.adaptiveThreshWinSizeStep = 3
         self.aruco_params.minMarkerPerimeterRate = 0.05
 
-        # self.buffer_size = 10
-        # self.marker_positions_buffer = {}
-
         # Load the camera calibration file
         camera_info_file = "/home/tcun/.ros/camera_info/head_camera.yaml"
         with open(camera_info_file, 'r') as f:
@@ -36,9 +34,6 @@ class ArucoDetector:
         self.camera_matrix = np.array(camera_info['camera_matrix']['data']).reshape(3, 3)
         self.dist_coeffs = np.array(camera_info['distortion_coefficients']['data'])
 
-    def moving_average(self, marker_id):
-        return np.mean(self.marker_positions_buffer[marker_id], axis=0)
-    
     def image_callback(self, data):
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, 'bgr8')
@@ -46,70 +41,69 @@ class ArucoDetector:
             print(e)
             return
 
+        # Enhance the image for better marker detection
+        cv_image = self.enhance_image(cv_image)
+
+        # Detect ArUco markers
+        corners, ids, _ = aruco.detectMarkers(cv_image, self.aruco_dict, parameters=self.aruco_params)
+
+        if ids is not None:
+            # Estimate the pose of each marker and publish the positions
+            self.publish_marker_positions(corners, ids)
+
+        # Draw detected markers and display the image
+        aruco.drawDetectedMarkers(cv_image, corners, ids)
+        resized_image = cv2.resize(cv_image, (1024, 720))
+        cv2.imshow("Aruco Detection", resized_image)
+        cv2.waitKey(1)
+
+    def enhance_image(self, cv_image):
         gray_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
         hsv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
 
         h, s, v = cv2.split(hsv_image)
-        green_channel = s
-        green_channel = cv2.GaussianBlur(green_channel, (3, 3), 0)
+        green_channel = cv2.GaussianBlur(s, (3, 3), 0)
 
         weight = 0.4  # You can adjust this value
         enhanced_green_channel = cv2.addWeighted(green_channel, weight, gray_image, 1 - weight, 0)
-        cv_image = cv2.addWeighted(gray_image, 0.5, enhanced_green_channel, 0.5, 0)
+        return cv2.addWeighted(gray_image, 0.5, enhanced_green_channel, 0.5, 0)
 
-        corners, ids, _ = aruco.detectMarkers(cv_image, self.aruco_dict, parameters=self.aruco_params)
-
+    def publish_marker_positions(self, corners, ids):
         last_known_positions = {}
-        if ids is not None:
+        marker_positions = []
 
-            marker_positions = []
+        # Load your camera's intrinsic parameters
+        camera_matrix = self.camera_matrix
+        dist_coeffs = self.dist_coeffs  # Update these values with your camera's distortion coefficients
 
-            # Load your camera's intrinsic parameters
-            camera_matrix = self.camera_matrix
-            dist_coeffs = self.dist_coeffs  # Update these values with your camera's distortion coefficients
+        # Set the ArUco marker size in meters
+        marker_size = 0.0145
 
-            # Set the ArUco marker size in meters
-            marker_size = 0.0145
+        # Estimate the pose of each marker
+        rvecs, tvecs, _ = aruco.estimatePoseSingleMarkers(corners, marker_size, camera_matrix, dist_coeffs)
 
-            # Estimate the pose of each marker
-            rvecs, tvecs, _ = aruco.estimatePoseSingleMarkers(corners, marker_size, camera_matrix, dist_coeffs)
+        for i in range(len(ids)):
+            marker_id = ids[i][0]
+            marker_position = np.mean(corners[i][0], axis=0)
 
-            for i in range(len(ids)):
-                marker_id = ids[i][0]
-                marker_position = np.mean(corners[i][0], axis=0)
+            # Save the last known positions of the markers
+            last_known_positions[marker_id] = (tvecs[i][0][0], tvecs[i][0][1], tvecs[i][0][2])
+            marker_positions.append([marker_id, tvecs[i][0][0], tvecs[i][0][2], tvecs[i][0][2]])
 
-                # if marker_id not in self.marker_positions_buffer:
-                #     self.marker_positions_buffer[marker_id] = [marker_position] * self.buffer_size
-                # else:
-                #     self.marker_positions_buffer[marker_id].append(marker_position)
-                #     self.marker_positions_buffer[marker_id].pop(0)
+        for marker_id, position in last_known_positions.items():
+            if marker_id not in [mp[0] for mp in marker_positions]:
+                marker_positions.append([marker_id, position[0], position[1], position[2]])
 
-                # Calculate moving average
+        # Prepare the marker positions array for publishing
+        marker_positions_array = Float64MultiArray()
+        marker_positions_array.layout.dim.append(MultiArrayDimension())
+        marker_positions_array.layout.dim[0].size = len(marker_positions)
+        marker_positions_array.layout.dim[0].stride = 4
+        marker_positions_array.layout.dim[0].label = 'markers'
+        marker_positions_array.data = np.array(marker_positions).flatten()
 
-                last_known_positions[marker_id] = (tvecs[i][0][0], tvecs[i][0][1], tvecs[i][0][2])
-                marker_positions.append([marker_id, tvecs[i][0][0], tvecs[i][0][2], tvecs[i][0][2]])
-
-            for marker_id, position in last_known_positions.items():
-                if marker_id not in [mp[0] for mp in marker_positions]:
-                    marker_positions.append([marker_id, position[0], position[1], position[2]])
-
-            marker_positions_array = Float64MultiArray()
-            marker_positions_array.layout.dim.append(MultiArrayDimension())
-            marker_positions_array.layout.dim[0].size = len(marker_positions)
-            marker_positions_array.layout.dim[0].stride = 4
-            marker_positions_array.layout.dim[0].label = 'markers'
-            marker_positions_array.data = np.array(marker_positions).flatten()
-            self.marker_pub.publish(marker_positions_array)
-
-        # Draw detected markers
-        aruco.drawDetectedMarkers(cv_image, corners, ids)
-
-        resized_image = cv2.resize(cv_image, (1024, 720))
-        # Display the image
-        cv2.imshow("Aruco Detection", resized_image)
-        cv2.waitKey(1)
-
-
+        # Publish the marker positions
+        self.marker_pub.publish(marker_positions_array)
 
 if __name__ == '__main__':
     try:
