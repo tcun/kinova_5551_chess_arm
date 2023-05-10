@@ -257,7 +257,7 @@ class KinovaChessControl(object):
         #open = 60% open
         #grab = 10% open 
         #close = 0% open 
-        self.gripper_setting = {"open": 0.28, "grab":0.1, "close":0, "wide":1} 
+        self.gripper_setting = {"open": 0.3, "grab":0.1, "close":0, "wide":1} 
 
         #Initialize heights for moving pieces around
         """Adjust Move and Pick Heights"""
@@ -552,15 +552,10 @@ class KinovaChessControl(object):
 if __name__=="__main__":
     a = KinovaChessControl()
     a.reach_custom_joint_state("cali_1")
-    
-   
     a.engine.reach_gripper_position(a.gripper_setting["grab"])
-    # a.user_calibration()
-    # a.engine.reach_gripper_position(a.gripper_setting["wide"])
-    print(a.engine.get_piece_position(205.0))
-    # position = input("give a square potision(i.e. a2): " )
-    a.board.get_square_coordinates("d3")
+    a.user_calibration()
     a.reach_custom_joint_state("cali_1")
+    a.engine.reach_gripper_position(a.gripper_setting["wide"])
 
     while True:
         try:
