@@ -1,0 +1,19 @@
+digraph G {
+"end_effector_link" -> "dummy_link"[label=" Broadcaster: /my_gen3_lite/robot_state_publisher\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"upper_wrist_link" -> "end_effector_link"[label=" Broadcaster: /my_gen3_lite/robot_state_publisher\nAverage rate: 40.201\nBuffer length: 4.975\nMost recent transform: 1683656356.213\nOldest transform: 1683656351.238\n"];
+"dummy_link" -> "gripper_base_link"[label=" Broadcaster: /my_gen3_lite/robot_state_publisher\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"dummy_link" -> "tool_frame"[label=" Broadcaster: /my_gen3_lite/robot_state_publisher\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"base_link" -> "shoulder_link"[label=" Broadcaster: /my_gen3_lite/robot_state_publisher\nAverage rate: 40.201\nBuffer length: 4.975\nMost recent transform: 1683656356.213\nOldest transform: 1683656351.238\n"];
+"shoulder_link" -> "arm_link"[label=" Broadcaster: /my_gen3_lite/robot_state_publisher\nAverage rate: 40.201\nBuffer length: 4.975\nMost recent transform: 1683656356.213\nOldest transform: 1683656351.238\n"];
+"arm_link" -> "forearm_link"[label=" Broadcaster: /my_gen3_lite/robot_state_publisher\nAverage rate: 40.201\nBuffer length: 4.975\nMost recent transform: 1683656356.213\nOldest transform: 1683656351.238\n"];
+"forearm_link" -> "lower_wrist_link"[label=" Broadcaster: /my_gen3_lite/robot_state_publisher\nAverage rate: 40.201\nBuffer length: 4.975\nMost recent transform: 1683656356.213\nOldest transform: 1683656351.238\n"];
+"lower_wrist_link" -> "upper_wrist_link"[label=" Broadcaster: /my_gen3_lite/robot_state_publisher\nAverage rate: 40.201\nBuffer length: 4.975\nMost recent transform: 1683656356.213\nOldest transform: 1683656351.238\n"];
+"gripper_base_link" -> "left_finger_prox_link"[label=" Broadcaster: /my_gen3_lite/robot_state_publisher\nAverage rate: 40.201\nBuffer length: 4.975\nMost recent transform: 1683656356.213\nOldest transform: 1683656351.238\n"];
+"left_finger_prox_link" -> "left_finger_dist_link"[label=" Broadcaster: /my_gen3_lite/robot_state_publisher\nAverage rate: 40.201\nBuffer length: 4.975\nMost recent transform: 1683656356.213\nOldest transform: 1683656351.238\n"];
+"gripper_base_link" -> "right_finger_prox_link"[label=" Broadcaster: /my_gen3_lite/robot_state_publisher\nAverage rate: 40.201\nBuffer length: 4.975\nMost recent transform: 1683656356.213\nOldest transform: 1683656351.238\n"];
+"right_finger_prox_link" -> "right_finger_dist_link"[label=" Broadcaster: /my_gen3_lite/robot_state_publisher\nAverage rate: 40.201\nBuffer length: 4.975\nMost recent transform: 1683656356.213\nOldest transform: 1683656351.238\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1683656356.245704"[ shape=plaintext ] ;
+}->"base_link";
+}
