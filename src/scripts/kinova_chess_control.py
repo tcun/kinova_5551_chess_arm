@@ -352,7 +352,7 @@ class KinovaChessControl(object):
 
     def move_gripper(self, pose):
         attempts = 5
-        tolerance = 0.01
+        tolerance = 0.005
         for i in range(attempts):
             success = self.engine.reach_cartesian_pose(pose=pose, tolerance=tolerance, constraints=None)
             if success:
@@ -552,9 +552,9 @@ class KinovaChessControl(object):
 if __name__=="__main__":
     a = KinovaChessControl()
     a.reach_custom_joint_state("cali_1")
-    a.engine.reach_gripper_position(a.gripper_setting["grab"])
-    a.user_calibration()
-    a.reach_custom_joint_state("cali_1")
+    # a.engine.reach_gripper_position(a.gripper_setting["grab"])
+    # a.user_calibration()
+    # a.reach_custom_joint_state("cali_1")
     a.engine.reach_gripper_position(a.gripper_setting["wide"])
 
     while True:
